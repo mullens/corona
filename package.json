@@ -1,0 +1,29 @@
+{
+  "name": "corona",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "isomorphic-unfetch": "^3.0.0",
+    "moment": "^2.24.0",
+    "next": "9.3.2",
+    "pondjs": "^0.9.0",
+    "react": "16.13.1",
+    "react-dom": "16.13.1",
+    "react-timeseries-charts": "^0.16.1",
+    "recharts": "^1.8.5"
+  },
+  "devDependencies": {
+    "@types/node": "^13.9.5",
+    "@types/react": "^16.9.26",
+    "typescript": "^3.8.3"
+  }
+}
