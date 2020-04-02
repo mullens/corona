@@ -10,7 +10,6 @@ import {
 } from "react-timeseries-charts";
 import { TimeSeries, TimeRange, Index as PondIndex } from "pondjs";
 import moment from "moment";
-
 const ChartForCity = (props: {
 	data: any;
 	city: string;
@@ -18,7 +17,6 @@ const ChartForCity = (props: {
 	max: number;
 	pop: number;
 }) => {
-	console.log("props.max", props);
 	const city = props.data.filter(e => e[1] === props.city);
 	const data = city
 		.map(e => [e[0], e[4]])
@@ -38,6 +36,7 @@ const ChartForCity = (props: {
 	if (!data.length) {
 		return <></>;
 	}
+
 	const millions = props.pop / 1000000;
 
 	const timeseries = new TimeSeries({
@@ -48,7 +47,6 @@ const ChartForCity = (props: {
 			value / millions
 		])
 	});
-
 	const style = styler([{ key: "cases", color: "#35C8E1" }]);
 
 	const todayCount = data[data.length - 1][1];
@@ -85,6 +83,13 @@ const ChartForCity = (props: {
 								style={style}
 								columns={["cases"]}
 								series={timeseries}
+								onHighlightChange={highlight => {
+									if (highlight) {
+										let numdisplay = highlight.event.get(highlight.column);
+										document.getElementById("num").textContent =
+											numdisplay.toFixed(2).toString() + " per million";
+									}
+								}}
 							/>
 						</Charts>
 					</ChartRow>
@@ -97,6 +102,7 @@ const ChartForCity = (props: {
 			<div>
 				{Math.round(todayCountPer * 1000) / 1000} per million people today
 			</div>
+			<h1 id="num"></h1>
 		</div>
 	);
 };
@@ -105,6 +111,7 @@ const Index = (props: { data: any; lastUpdated: string; max: number }) => {
 	return (
 		<>
 			<div>Last updated: {props.lastUpdated}</div>
+
 			<ChartForCity
 				city="San Francisco"
 				state="California"
@@ -139,41 +146,26 @@ Index.getInitialProps = async function() {
 	const text = await res.text();
 	const [headings, ...data] = text.split("\n");
 	const table = data.map(e => e.split(","));
-
-	const kingDailyData = table
-		.filter(e => e[1] === "King")
-		.map(e => [e[0], e[4]])
-		.map((e, index, array) => {
-			let ret = e;
-			if (index) {
-				ret = [
-					e[0],
-					(
-						Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
-					).toString()
-				];
-			}
-			return ret;
-		});
-
-	const max1 = Math.max(
-		...table
-			.filter(e => e[1] === "King")
-			.map(e => [e[0], e[4]])
-			.map((e, index, array) => {
-				let ret = e;
-				if (index) {
-					ret = [
-						e[0],
-						(
-							Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
-						).toString()
-					];
-				}
-				return ret;
-			})
-			.map(e => Number.parseInt(e[1]))
-	);
+	const max1 =
+		Math.max(
+			...table
+				.filter(e => e[1] === "King")
+				.map(e => [e[0], e[4]])
+				.map((e, index, array) => {
+					let ret = e;
+					if (index) {
+						ret = [
+							e[0],
+							(
+								Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
+							).toString()
+						];
+					}
+					return ret;
+				})
+				.map(e => Number.parseInt(e[1]))
+		) /
+		(2189000 / 1000000);
 	const max = Math.max(
 		...table.filter(e => e.includes("King")).map(e => Number.parseInt(e[4]))
 	);
