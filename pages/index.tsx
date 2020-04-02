@@ -18,13 +18,26 @@ const ChartForCity = (props: {
 	max: number;
 	pop: number;
 }) => {
+	console.log("props.max", props);
 	const city = props.data.filter(e => e[1] === props.city);
-	const data = city.map(e => [e[0], e[4]]);
+	const data = city
+		.map(e => [e[0], e[4]])
+		.map((e, index, array) => {
+			let ret = e;
+			if (index) {
+				ret = [
+					e[0],
+					(
+						Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
+					).toString()
+				];
+			}
+			return ret;
+		});
 
 	if (!data.length) {
 		return <></>;
 	}
-
 	const millions = props.pop / 1000000;
 
 	const timeseries = new TimeSeries({
@@ -62,7 +75,7 @@ const ChartForCity = (props: {
 							id="cases"
 							label="Coronavirus cases"
 							min={0}
-							max={props.max / millions}
+							max={props.max}
 							width="30"
 							type="linear"
 						/>
@@ -126,14 +139,48 @@ Index.getInitialProps = async function() {
 	const text = await res.text();
 	const [headings, ...data] = text.split("\n");
 	const table = data.map(e => e.split(","));
+
+	const kingDailyData = table
+		.filter(e => e[1] === "King")
+		.map(e => [e[0], e[4]])
+		.map((e, index, array) => {
+			let ret = e;
+			if (index) {
+				ret = [
+					e[0],
+					(
+						Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
+					).toString()
+				];
+			}
+			return ret;
+		});
+
+	const max1 = Math.max(
+		...table
+			.filter(e => e[1] === "King")
+			.map(e => [e[0], e[4]])
+			.map((e, index, array) => {
+				let ret = e;
+				if (index) {
+					ret = [
+						e[0],
+						(
+							Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
+						).toString()
+					];
+				}
+				return ret;
+			})
+			.map(e => Number.parseInt(e[1]))
+	);
 	const max = Math.max(
 		...table.filter(e => e.includes("King")).map(e => Number.parseInt(e[4]))
 	);
-
 	return {
 		data: table,
 		lastUpdated,
-		max
+		max: max1
 	};
 };
 
