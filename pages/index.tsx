@@ -6,7 +6,7 @@ import {
 	YAxis,
 	Resizable,
 	BarChart,
-	styler
+	styler,
 } from "react-timeseries-charts";
 import { TimeSeries, TimeRange, Index as PondIndex } from "pondjs";
 import moment from "moment";
@@ -17,25 +17,8 @@ const ChartForCity = (props: {
 	max: number;
 	pop: number;
 }) => {
-	const city = props.data.filter(e => e[1] === props.city);
-	const data = city
-		.map(e => [e[0], e[4]])
-		.map((e, index, array) => {
-			let ret = e;
-			if (index) {
-				ret = [
-					e[0],
-					(
-						Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
-					).toString()
-				];
-			}
-			return ret;
-		});
-
-	if (!data.length) {
-		return <></>;
-	}
+	const city = props.data.filter((e) => e[1] === props.city);
+	const data = getDailyData(city, props.city);
 
 	const millions = props.pop / 1000000;
 
@@ -44,8 +27,8 @@ const ChartForCity = (props: {
 		columns: ["index", "cases"],
 		points: data.map(([d, value]) => [
 			(PondIndex.getIndexString as any)("1d", new Date(d)),
-			value / millions
-		])
+			value / millions,
+		]),
 	});
 	const style = styler([{ key: "cases", color: "#35C8E1" }]);
 
@@ -83,11 +66,15 @@ const ChartForCity = (props: {
 								style={style}
 								columns={["cases"]}
 								series={timeseries}
-								onHighlightChange={highlight => {
+								onHighlightChange={(highlight) => {
 									if (highlight) {
 										let numdisplay = highlight.event.get(highlight.column);
-										document.getElementById("num").textContent =
-											numdisplay.toFixed(2).toString() + " per million";
+										let numdisplay2 = numdisplay * millions;
+										document.getElementById(
+											"num"
+										).textContent = ` ${numdisplay
+											.toFixed(2)
+											.toString()} per million (${numdisplay2})`;
 									}
 								}}
 							/>
@@ -136,8 +123,26 @@ const Index = (props: { data: any; lastUpdated: string; max: number }) => {
 		</>
 	);
 };
+const getDailyData = (array: string[][], county: string): any => {
+	const singleCounty = array.filter((e) => e[1] === county);
+	const dateAndTotal = singleCounty.map((e) => [e[0], e[4]]);
+	const daily = dateAndTotal.map((e, index, array) => {
+		let ret = e;
+		if (index) {
+			ret = [
+				e[0],
+				(
+					Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
+				).toString(),
+			];
+		}
+		return ret;
+	});
 
-Index.getInitialProps = async function() {
+	return daily;
+};
+
+Index.getInitialProps = async function () {
 	const res = await fetch(
 		"https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
 	);
@@ -145,34 +150,22 @@ Index.getInitialProps = async function() {
 
 	const text = await res.text();
 	const [headings, ...data] = text.split("\n");
-	const table = data.map(e => e.split(","));
+	const table = data.map((e) => e.split(","));
+	const dailyData = table.map((e) => {
+		[e[0], e[4]];
+	});
+	console.log(table);
+	// console.log(dailyData);
 	const max1 =
-		Math.max(
-			...table
-				.filter(e => e[1] === "King")
-				.map(e => [e[0], e[4]])
-				.map((e, index, array) => {
-					let ret = e;
-					if (index) {
-						ret = [
-							e[0],
-							(
-								Number.parseInt(e[1]) - Number.parseInt(array[index - 1][1])
-							).toString()
-						];
-					}
-					return ret;
-				})
-				.map(e => Number.parseInt(e[1]))
-		) /
+		Math.max(...getDailyData(table, "King").map((e) => e[1])) /
 		(2189000 / 1000000);
 	const max = Math.max(
-		...table.filter(e => e.includes("King")).map(e => Number.parseInt(e[4]))
+		...table.filter((e) => e.includes("King")).map((e) => Number(e[4]))
 	);
 	return {
 		data: table,
 		lastUpdated,
-		max: max1
+		max: max1,
 	};
 };
 
